@@ -24,6 +24,7 @@ class VideoStabilizer:
 
 		self.prevFrame = cv2.resize(frame, self.frameSize)
 		self.prevGray = cv2.cvtColor(self.prevFrame, cv2.COLOR_BGR2GRAY)
+		self.lastRigidTransform = None
 
 		self.K_collect = []
 		self.P_collect = []
@@ -33,7 +34,7 @@ class VideoStabilizer:
 		grab, frame = self.stream.read()
 		if not grab:
 			print("[VideoStabilizer] No frame is captured.")
-			return False, None
+			return False, None, None
 
 		currentFrame = cv2.resize(frame, self.frameSize)
 		currentGray = cv2.cvtColor(currentFrame, cv2.COLOR_BGR2GRAY)
@@ -59,6 +60,9 @@ class VideoStabilizer:
 										currentPoints,
 										fullAffine=False)
 
+		if m is None:
+			m = self.lastRigidTransform
+
 		dx = m[0, 2]
 		dy = m[1, 2]
 
@@ -76,7 +80,7 @@ class VideoStabilizer:
 			self.P_estimate = np.ones((1,3), dtype="float")
 		else:
 			# extrapolation
-			X_predict = self.X_estimate.copy()
+			X_predict = self.X_estimate
 			P_predict = self.P_estimate + self.Q
 
 			# update state
@@ -108,15 +112,16 @@ class VideoStabilizer:
 
 		self.prevGray = currentGray
 		self.prevFrame = currentFrame
+		self.lastRigidTransform = m
 
 		self.count += 1
 
-		return True, frame_stabilized
+		return True, currentFrame, frame_stabilized
 
 
 	def fixBorder(self, frame):
 		s = frame.shape
-		# Scale the image 4% without moving the center
+		# Scale the image 10% without moving the center
 		T = cv2.getRotationMatrix2D((s[1]/2, s[0]/2), 0, 1.1)
 		frame = cv2.warpAffine(frame, T, (s[1], s[0]))
 		return frame
