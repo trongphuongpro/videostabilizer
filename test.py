@@ -5,8 +5,8 @@ video = cv2.VideoCapture("path-to-your-video")
 stabilizer = VideoStabilizer(video)
 
 while True:
-	grab, frame = stabilizer.read()
-	if not grab:
+	success, _, frame = stabilizer.read()
+	if not success:
 		print("No frame is captured.")
 		break
 		
