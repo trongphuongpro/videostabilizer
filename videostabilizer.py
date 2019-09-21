@@ -56,9 +56,7 @@ class VideoStabilizer:
 		self.prevPoints = self.prevPoints[idx]
 		currentPoints = currentPoints[idx]
 
-		m = cv2.estimateRigidTransform(self.prevPoints,
-										currentPoints,
-										fullAffine=False)
+		m, inliers = cv2.estimateAffinePartial2D(self.prevPoints, currentPoints)
 
 		if m is None:
 			m = self.lastRigidTransform
